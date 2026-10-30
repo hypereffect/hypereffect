@@ -59,7 +59,8 @@ jobs:
           version=$(node -p "require('./ts/package.json').version")
           test "ts/v$version" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, package.json $version"; exit 1; }
       - run: just test-ts
-      - run: npm --prefix ts publish
+      - run: npm publish
+        working-directory: ts
 
   python:
     if: startsWith(github.ref_name, 'python/v')
