@@ -92,7 +92,3 @@ jobs:
           go-version-file: go/go.mod
       - uses: extractions/setup-just@v2
       - run: just test-go
-      # The tag is the release; asking the module proxy for it makes it
-      # available, and listed on pkg.go.dev, right away.
-      - name: Announce to the module proxy
-        run: curl -fsS "https://proxy.golang.org/github.com/hypereffect/hypereffect/go/@v/${GITHUB_REF_NAME#go/}.info"
