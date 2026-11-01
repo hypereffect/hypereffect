@@ -162,8 +162,9 @@ to reset an indicator or close a dialog).
 
 ### `metadata` → `out.metadata(Metadata::new().name("Tasks"))`
 
-Optional: `name`, `description`, `icon` (URL). Each message replaces the
-previous one. Renderers may ignore it.
+Optional: `name`, `description`, `icon` (URL). Other string members
+(`.extra(key, value)`) are extensions that only renderers which define them
+read. Each message replaces the previous one. Renderers may ignore it.
 
 ### `hello` → `App::hello(out, params)`
 

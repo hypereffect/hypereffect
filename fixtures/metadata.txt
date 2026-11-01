@@ -6,11 +6,15 @@ element {"id":"main","type":"text","text":"Hi"}
 =children - ["main"]
 =metadata {}
 
-# Only the three known members are kept, and only when they are strings.
+# Only members that are strings are kept.
 metadata {"name":"Plants","description":"Water the plants","icon":"https://example.com/icon.png","extra":1}
 =metadata {"name":"Plants","description":"Water the plants","icon":"https://example.com/icon.png"}
 metadata {"name":5,"description":null,"icon":"https://example.com/icon.png"}
 =metadata {"icon":"https://example.com/icon.png"}
+
+# Other string members are extensions, kept for the protocol that defines them.
+metadata {"name":"Plants","url":"/plants/3","extra":{"a":1}}
+=metadata {"name":"Plants","url":"/plants/3"}
 
 # Each message replaces the previous one.
 metadata {"name":"Garden"}

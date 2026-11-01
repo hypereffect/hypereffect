@@ -205,14 +205,16 @@ export interface Metadata {
   name?: string;
   description?: string;
   icon?: string;
+  // The other string members: extensions defined by a protocol built on
+  // hypereffect, which renderers that do not know them ignore.
+  [member: string]: string | undefined;
 }
 
 // Reads the members that are strings and drops everything else.
 export function metadataFromObject(body: JsonObject): Metadata {
   const m: Metadata = {};
-  for (const k of ['name', 'description', 'icon'] as const) {
-    const v = body[k];
-    if (typeof v === 'string') m[k] = v;
+  for (const [k, v] of Object.entries(body)) {
+    if (typeof v === 'string' && k !== '__proto__') m[k] = v;
   }
   return m;
 }

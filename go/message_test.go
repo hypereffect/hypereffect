@@ -95,12 +95,17 @@ func TestServerMessages(t *testing.T) {
 	for line, want := range map[string]he.ServerMessage{
 		`remove {"id":"x"}`:                he.Remove{ID: "x"},
 		`metadata {"name":"Plants","x":1}`: he.Metadata{Name: "Plants"},
+		`metadata {"url":"/a","x":1}`:      he.Metadata{Extra: map[string]string{"url": "/a"}},
 		`signal {"a":{"b":true}}`:          he.Signal{"a": map[string]any{"b": true}},
 	} {
 		got, err := he.ParseServerMessage(line)
 		if err != nil || !reflect.DeepEqual(got, want) {
 			t.Errorf("%s: %#v %v", line, got, err)
 		}
+	}
+	m := he.Metadata{Name: "P", Extra: map[string]string{"url": "/a", "name": "Q"}}
+	if got := m.Line(); got != `metadata {"name":"P","url":"/a"}`+"\n" {
+		t.Errorf("got %q", got)
 	}
 	if _, err := he.ParseServerMessage(`element {"id":"x","type":"text"} x`); err == nil {
 		t.Error("trailing data parsed")

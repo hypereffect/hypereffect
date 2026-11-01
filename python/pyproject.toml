@@ -1,6 +1,6 @@
 [project]
 name = "hypereffect-ui"
-version = "0.1.0"
+version = "0.2.0"
 description = "Types and helpers for writing hypereffect servers: messages, line framing, signals and components, an App/Server session driver, and a renderer client with a loopback for tests."
 readme = "README.md"
 license = "MIT"

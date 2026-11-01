@@ -209,13 +209,21 @@ element {"id":"title","type":"text","parent":"main","variant":"h1","text":"Inbox
         </dl>
         <p>
           All members are optional. Each message replaces the previous one, so a member that is
-          absent is unset. A member that is not a string, and any other member, is ignored. The
+          absent is unset. A member that is not a string is ignored. Any other string member is an
+          <em>extension member</em>: a protocol built on hypereffect MAY define extension members
+          for its own renderers, and a renderer that does not know one ignores it. Extension
+          members are part of the metadata, so each message replaces them too. The
           metadata is empty at the start of a session and is discarded with the rest of the state
           when a new session begins. Metadata never affects the element tree or the signals, and
           renderers MUST NOT require it. Fetching <code>icon</code> has the same privacy
           implications as an <code>image</code> (<a href="#security">section 13</a>).
         </p>
         <pre>metadata {"name":"Plants","description":"Keeps the garden watered","icon":"https://example.com/icon.png"}</pre>
+        <p>
+          An extension member chosen by a protocol layered on hypereffect, which other renderers
+          ignore:
+        </p>
+        <pre>metadata {"name":"Plants","url":"/plants/3"}</pre>
 
         <h2 id="client-messages"><span class="num">6</span>Renderer messages</h2>
 

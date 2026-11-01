@@ -78,6 +78,8 @@ def test_renderer_messages() -> None:
 def test_server_messages() -> None:
     assert parse_server_message('remove {"id":"x"}') == Remove("x")
     assert parse_server_message('metadata {"name":"Plants","x":1}') == Metadata(name="Plants")
+    assert parse_server_message('metadata {"url":"/a","n":1}') == Metadata(extra={"url": "/a"})
+    assert Metadata(name="P", extra={"url": "/a"}).to_line() == 'metadata {"name":"P","url":"/a"}\n'
     with pytest.raises(ParseError):
         parse_server_message('element {"id":"x","type":"marquee"}')
 

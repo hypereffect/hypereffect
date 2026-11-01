@@ -55,6 +55,7 @@ test('renderer messages', () => {
 test('server messages', () => {
   assert.deepEqual(parseServerMessage('remove {"id":"x"}'), { tag: 'remove', id: 'x' });
   assert.deepEqual(parseServerMessage('metadata {"name":"Plants","x":1}'), { tag: 'metadata', metadata: { name: 'Plants' } });
+  assert.deepEqual(parseServerMessage('metadata {"url":"/a","n":1}'), { tag: 'metadata', metadata: { url: '/a' } });
   assert.throws(() => parseServerMessage('element {"id":"x","type":"marquee"}'), ParseError);
 });
 

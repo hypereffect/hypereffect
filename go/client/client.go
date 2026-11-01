@@ -442,7 +442,7 @@ func (c *Client) diag(format string, args ...any) {
 }
 
 func (c *Client) setMetadata(m he.Metadata) {
-	if c.metadata != m {
+	if !c.metadata.Equal(m) {
 		c.metadata = m
 		c.changes.Metadata = true
 	}

@@ -1,6 +1,6 @@
 {
   "name": "hypereffect",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Types and helpers for the hypereffect protocol: messages, line framing, signals and components, an App/Server session driver, and the renderer core (element tree, signals and CEL evaluation, without any drawing).",
   "type": "module",
   "exports": {

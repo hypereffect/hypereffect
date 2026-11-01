@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"strings"
 	"unicode/utf8"
 
@@ -309,6 +310,35 @@ type Metadata struct {
 	Description string `json:"description,omitempty"`
 	// The URL of an icon for the application.
 	Icon string `json:"icon,omitempty"`
+	// The other string members: extensions defined by a protocol built on
+	// hypereffect, which renderers that do not know them ignore. Sent as
+	// members of the metadata object, next to the ones above; keys that are
+	// one of those are dropped.
+	Extra map[string]string `json:"-"`
+}
+
+var knownMetadata = map[string]bool{"name": true, "description": true, "icon": true}
+
+// MarshalJSON writes the extension members next to the known ones.
+func (m Metadata) MarshalJSON() ([]byte, error) {
+	out := map[string]string{}
+	for k, v := range m.Extra {
+		if !knownMetadata[k] {
+			out[k] = v
+		}
+	}
+	for k, v := range map[string]string{"name": m.Name, "description": m.Description, "icon": m.Icon} {
+		if v != "" {
+			out[k] = v
+		}
+	}
+	return jsonx.Marshal(out)
+}
+
+// Equal reports whether m and o hold the same members.
+func (m Metadata) Equal(o Metadata) bool {
+	return m.Name == o.Name && m.Description == o.Description && m.Icon == o.Icon &&
+		maps.Equal(m.Extra, o.Extra)
 }
 
 // MetadataFromMap reads the members that are strings and drops everything
@@ -318,7 +348,16 @@ func MetadataFromMap(body map[string]any) Metadata {
 		s, _ := body[k].(string)
 		return s
 	}
-	return Metadata{Name: get("name"), Description: get("description"), Icon: get("icon")}
+	m := Metadata{Name: get("name"), Description: get("description"), Icon: get("icon")}
+	for k, v := range body {
+		if s, ok := v.(string); ok && !knownMetadata[k] {
+			if m.Extra == nil {
+				m.Extra = map[string]string{}
+			}
+			m.Extra[k] = s
+		}
+	}
+	return m
 }
 
 // ParseServerMessage parses a line (without its line feed).

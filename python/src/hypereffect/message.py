@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any, Self, TypeAlias
@@ -186,11 +187,23 @@ class Metadata:
     name: str | None = None
     description: str | None = None
     icon: str | None = None
+    # The other string members: extensions defined by a protocol built on
+    # hypereffect, which renderers that do not know them ignore. Sent as
+    # members of the metadata object, next to the ones above.
+    extra: Mapping[str, str] = field(default_factory=dict)
     tag = "metadata"
 
+    _KNOWN = ("name", "description", "icon")
+
+    def __post_init__(self) -> None:
+        for k in self.extra:
+            if k in self._KNOWN:
+                raise ValueError(f"{k} is not an extension member")
+
     def to_json(self) -> dict[str, Json]:
-        return {k: v for k, v in (("name", self.name), ("description", self.description),
-                                  ("icon", self.icon)) if v is not None}
+        known = {k: v for k, v in (("name", self.name), ("description", self.description),
+                                   ("icon", self.icon)) if v is not None}
+        return {**known, **self.extra}
 
     def to_line(self) -> str:
         return encode_line("metadata", self.to_json())
@@ -201,7 +214,8 @@ class Metadata:
         def get(k: str) -> str | None:
             v = body.get(k)
             return v if isinstance(v, str) else None
-        return cls(get("name"), get("description"), get("icon"))
+        extra = {k: v for k, v in body.items() if k not in cls._KNOWN and isinstance(v, str)}
+        return cls(get("name"), get("description"), get("icon"), extra)
 
 
 ServerMessage: TypeAlias = "Element | Remove | Signal | Metadata"

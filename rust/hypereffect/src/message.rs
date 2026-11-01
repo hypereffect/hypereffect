@@ -248,6 +248,7 @@ pub enum ServerMessage {
 /// Optional details about the application, sent by the server. A renderer is
 /// free to ignore all of them.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(from = "Map<String, Value>")]
 pub struct Metadata {
     /// The name of the application.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -258,6 +259,11 @@ pub struct Metadata {
     /// The URL of an icon for the application.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
+    /// The other string members: extensions defined by a protocol built on
+    /// hypereffect, which renderers that do not know them ignore. Sent as
+    /// members of the metadata object, next to the ones above.
+    #[serde(flatten)]
+    pub extra: BTreeMap<String, String>,
 }
 
 impl Metadata {
@@ -280,6 +286,20 @@ impl Metadata {
         self
     }
 
+    /// Sets an extension member. Panics if `key` is `name`, `description`
+    /// or `icon`.
+    pub fn extra(mut self, key: impl Into<String>, value: impl Into<String>) -> Self {
+        let key = key.into();
+        assert!(
+            !Self::KNOWN.contains(&key.as_str()),
+            "{key} is not an extension member"
+        );
+        self.extra.insert(key, value.into());
+        self
+    }
+
+    const KNOWN: [&str; 3] = ["name", "description", "icon"];
+
     /// Reads the members that are strings and drops everything else.
     pub fn from_map(body: &Map<String, Value>) -> Self {
         let get = |k: &str| body.get(k).and_then(Value::as_str).map(str::to_string);
@@ -287,7 +307,18 @@ impl Metadata {
             name: get("name"),
             description: get("description"),
             icon: get("icon"),
+            extra: body
+                .iter()
+                .filter(|(k, _)| !Self::KNOWN.contains(&k.as_str()))
+                .filter_map(|(k, v)| Some((k.clone(), v.as_str()?.to_string())))
+                .collect(),
         }
+    }
+}
+
+impl From<Map<String, Value>> for Metadata {
+    fn from(body: Map<String, Value>) -> Self {
+        Self::from_map(&body)
     }
 }
 
@@ -610,5 +641,22 @@ mod tests {
         assert_eq!(b.push(b"nal {}\n"), vec!["signal {}"]);
         assert!(parse_line("Signal {}").is_err());
         assert_eq!(parse_line("signal []"), Err(ParseError::NotAnObject));
+    }
+
+    #[test]
+    fn metadata_extensions() {
+        let m = Metadata::new().name("Plants").extra("url", "/plants/3");
+        let line = ServerMessage::Metadata(m.clone()).to_line();
+        assert_eq!(
+            line,
+            "metadata {\"name\":\"Plants\",\"url\":\"/plants/3\"}\n"
+        );
+        assert_eq!(
+            ServerMessage::parse(line.trim_end()).unwrap(),
+            ServerMessage::Metadata(m.clone())
+        );
+        let parsed: Metadata =
+            serde_json::from_str(r#"{"name":"Plants","url":"/plants/3","n":1}"#).unwrap();
+        assert_eq!(parsed, m);
     }
 }
