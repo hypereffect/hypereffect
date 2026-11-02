@@ -11,6 +11,3 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 hypereffect = { path = "../../hypereffect" }
-
-[dev-dependencies]
-hypereffect = { path = "../../hypereffect", features = ["client"] }

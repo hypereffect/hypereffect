@@ -1,6 +1,4 @@
 //! Runs the shared fixtures in ../../fixtures against `Client`.
-#![cfg(feature = "client")]
-
 use hypereffect::client::Client;
 use hypereffect::Value;
 use std::collections::VecDeque;

@@ -8,17 +8,18 @@
 //! - [`component`]: the components, their attributes and nesting rules.
 //! - [`server`]: an [`App`](server::App) trait for per-session logic, and
 //!   [`wasm_app!`] to export one from a WebAssembly module.
-//! - [`client`] (feature `client`): the renderer side without drawing. It
+//! - [`client`]: the renderer side without drawing. It
 //!   keeps the element tree and signals, evaluates CEL expressions and yields
 //!   elements with resolved attribute values.
+//! - [`vtree`]: build the interface as a tree from your
+//!   data, and send it, or only what changed since the previous tree.
 
 pub mod component;
 pub mod message;
 pub mod server;
 pub mod signals;
-
-#[cfg(feature = "client")]
 pub mod client;
+pub mod vtree;
 
 pub use component::Component;
 pub use message::{

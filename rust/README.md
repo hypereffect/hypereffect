@@ -42,11 +42,38 @@ impl App for Counter {
   `he_output`/`he_output_len`/`he_output_clear`, and calls `he_tick` at the
   interval `he_tick_interval` returns. See `site/demo/transport.js` for a host.
 
+### Views as trees
+
+With the `vtree` module, an interface can be a pure function of the app's data
+that returns a tree of nodes, built like elements (`vtree::column`,
+`vtree::text`, ... take the same setters, plus `child`/`children`).
+`vtree::render(&tree)` gives the messages that create it, and
+`vtree::diff(&old, &new)` the fewest that turn one into the other: elements
+are matched by id, and only those whose attributes, type, parent or position
+changed are sent, followed by the removals.
+
+```rust
+fn view(&self) -> vtree::Node {
+    vtree::list("todos").children(self.todos.iter().map(|t| {
+        vtree::checkbox(format!("todo-{}", t.id)).label(&t.title).value(t.done)
+    }))
+}
+
+// in an action, with the tree sent last kept in self.shown:
+let next = self.view();
+out.extend(vtree::diff(&self.shown, &next));
+self.shown = next;
+```
+
+Ids should identify the data, not the position (`todo-42`, not the index), so
+that a kept element is updated or moved in place and keeps its widget state.
+`render_into` and `diff_into` manage the children of an existing element.
+
 ## Renderers
 
-With the `client` feature, `client::Client` is the renderer side without
-drawing, on top of the [`cel`](https://github.com/cel-rust/cel-rust) crate with
-its strings, math and lists extensions:
+`client::Client` is the renderer side without drawing, on top of the
+[`cel`](https://github.com/cel-rust/cel-rust) crate with its strings, math
+and lists extensions:
 
 ```rust
 let mut c = hypereffect::client::Client::new();

@@ -1,6 +1,6 @@
 [package]
 name = "hypereffect"
-version = "0.6.0"
+version = "0.6.1"
 description = "Types and helpers for the hypereffect protocol: server messages, a wasm server harness, and a renderer core with CEL evaluation."
 edition.workspace = true
 license.workspace = true
@@ -9,15 +9,10 @@ readme = "../README.md"
 keywords = ["hypermedia", "gui", "ui", "wasm", "web"]
 categories = ["gui", "wasm", "web-programming"]
 
-[features]
-default = []
-# The renderer core: element tree, signals and CEL evaluation.
-client = ["dep:cel"]
-
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
-cel = { version = "0.15", default-features = false, features = ["regex"], optional = true }
+cel = { version = "0.15", default-features = false, features = ["regex"] }
 
 [package.metadata.docs.rs]
 all-features = true

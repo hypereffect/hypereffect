@@ -55,6 +55,14 @@ impl Outbox {
     }
 }
 
+impl<M: Into<ServerMessage>> Extend<M> for Outbox {
+    fn extend<I: IntoIterator<Item = M>>(&mut self, iter: I) {
+        for m in iter {
+            self.send(m);
+        }
+    }
+}
+
 /// The logic of one session. A new app is created (with [`Default`]) for
 /// every hello, and dropped when the session ends.
 pub trait App {
@@ -255,20 +263,17 @@ macro_rules! wasm_app {
 /// assert_eq!(l.client.attr("t", "text"), Some(json!("hello")));
 /// assert!(l.client.take_diagnostics().is_empty());
 /// ```
-#[cfg(feature = "client")]
 pub struct Loopback<A> {
     pub client: crate::client::Client,
     pub server: Server<A>,
 }
 
-#[cfg(feature = "client")]
 impl<A: App + Default> Default for Loopback<A> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[cfg(feature = "client")]
 impl<A: App + Default> Loopback<A> {
     /// Starts a session.
     pub fn new() -> Self {

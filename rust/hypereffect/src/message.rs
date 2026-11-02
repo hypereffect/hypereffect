@@ -53,8 +53,8 @@ pub struct Element {
 macro_rules! setters {
     ($($fn:ident => $name:literal),* $(,)?) => {
         $(
-            #[doc = concat!("Sets the `", $name, "` attribute (a literal, or an expression from [`cel`]).")]
-            pub fn $fn(self, v: impl Into<Value>) -> Self {
+            #[doc = concat!("Sets the `", $name, "` attribute (a literal, or an expression from [`cel`](crate::cel)).")]
+            pub fn $fn(self, v: impl Into<$crate::Value>) -> Self {
                 self.set($name, v)
             }
         )*
@@ -65,12 +65,38 @@ macro_rules! handlers {
     ($($fn:ident => $name:literal),* $(,)?) => {
         $(
             #[doc = concat!("Sets the `", $name, "` handler.")]
-            pub fn $fn(self, h: Handler) -> Self {
+            pub fn $fn(self, h: $crate::Handler) -> Self {
                 self.set($name, h)
             }
         )*
     };
 }
+
+/// The attribute and handler setters, for any type with a
+/// `set(self, &str, impl Into<Value>) -> Self` method.
+macro_rules! attribute_setters {
+    () => {
+        $crate::message::setters! {
+            visible => "visible", disabled => "disabled", gap => "gap", align => "align",
+            justify => "justify", wrap => "wrap", title => "title", empty => "empty",
+            label => "label", open => "open", value => "value", variant => "variant",
+            src => "src", alt => "alt", placeholder => "placeholder", error => "error",
+            options => "options", min => "min", max => "max", step => "step", text => "text",
+        }
+
+        /// Sets `bind`, the signal path a control reads and writes.
+        pub fn bind(self, path: impl Into<String>) -> Self {
+            self.set("bind", path.into())
+        }
+
+        $crate::message::handlers! {
+            on_press => "onPress", on_change => "onChange", on_submit => "onSubmit", on_dismiss => "onDismiss",
+        }
+    };
+}
+
+#[allow(unused_imports)]
+pub(crate) use {attribute_setters, handlers, setters};
 
 impl Element {
     pub fn new(id: impl Into<String>, component: Component) -> Self {
@@ -99,22 +125,7 @@ impl Element {
         self
     }
 
-    setters! {
-        visible => "visible", disabled => "disabled", gap => "gap", align => "align",
-        justify => "justify", wrap => "wrap", title => "title", empty => "empty",
-        label => "label", open => "open", value => "value", variant => "variant",
-        src => "src", alt => "alt", placeholder => "placeholder", error => "error",
-        options => "options", min => "min", max => "max", step => "step", text => "text",
-    }
-
-    /// Sets `bind`, the signal path a control reads and writes.
-    pub fn bind(self, path: impl Into<String>) -> Self {
-        self.set("bind", path.into())
-    }
-
-    handlers! {
-        on_press => "onPress", on_change => "onChange", on_submit => "onSubmit", on_dismiss => "onDismiss",
-    }
+    attribute_setters!();
 
     pub fn to_message(self) -> ServerMessage {
         ServerMessage::Element(self)

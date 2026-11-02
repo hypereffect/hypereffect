@@ -13,6 +13,3 @@ crate-type = ["cdylib", "rlib"]
 hypereffect = { path = "../../hypereffect" }
 qrcode = { version = "0.14.1", default-features = false }
 base64 = "0.22"
-
-[dev-dependencies]
-hypereffect = { path = "../../hypereffect", features = ["client"] }
