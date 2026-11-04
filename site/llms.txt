@@ -4,7 +4,8 @@
 
 ## Docs
 
-- [Writing a server in Rust](https://hypereffect.dev/server-guide.md): messages, how they map to the `hypereffect` crate, update rules, and complete tested examples.
+- [Writing a server](https://hypereffect.dev/server-guide.md): language-agnostic guidelines: messages, update rules, server-confirmed state, and how the Rust, Go, Python and TypeScript libraries expose them.
+- [Complex interfaces in Rust](https://hypereffect.dev/rust-vtree-guide.md): building the interface as a tree with the `vtree` module and sending only diffs, with a complete tested example.
 - [Components](https://hypereffect.dev/components.md): all eighteen components, their attributes, defaults, nesting rules and handlers.
 - [Specification](https://hypereffect.dev/spec.html)
 - [Expressions](https://hypereffect.dev/expressions.html)
