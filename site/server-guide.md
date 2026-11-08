@@ -22,7 +22,8 @@
   - `element`: create, replace or move one element,
   - `remove`: delete one element and its subtree,
   - `signal`: a JSON Merge Patch (RFC 7386) on the signals,
-  - `metadata`: optional app name, description and icon.
+  - `metadata`: optional app name, description and icon,
+  - `log`: an event for the user or the host's log, without changing the UI.
 - The renderer sends `hello` once, then `action` messages when the user
   triggers a handler. Each action carries all non-local signals.
 
@@ -240,6 +241,19 @@ indicator or close a dialog).
 Optional `name`, `description` and `icon` (URL). Other string members are
 extensions only renderers that define them read. Each message replaces the
 previous one; renderers may ignore it.
+
+### `log`
+
+An event for the user or the host's developer log: a `summary` (required),
+an optional `detail`, and a `type` of `warning`, `error`, `success`, `info`
+(default) or `debug`. It never changes the tree or signals, and it is not
+replayed on a new session. Use it for background events ("Synced", "Disk
+almost full"); use a `notice` or an input's `error` for something the user
+must see and act on.
+
+```rust
+out.log(Log::new("Saved").detail("3 files updated").kind(LogType::Success));
+```
 
 ### `hello`
 

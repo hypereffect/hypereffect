@@ -97,6 +97,10 @@ func TestServerMessages(t *testing.T) {
 		`metadata {"name":"Plants","x":1}`: he.Metadata{Name: "Plants"},
 		`metadata {"url":"/a","x":1}`:      he.Metadata{Extra: map[string]string{"url": "/a"}},
 		`signal {"a":{"b":true}}`:          he.Signal{"a": map[string]any{"b": true}},
+		`log {"summary":"Saved","detail":"3 files","type":"success"}`: he.Log{
+			Summary: "Saved", Detail: "3 files", Type: he.LogSuccess,
+		},
+		`log {"summary":"Hi","type":"other"}`: he.Log{Summary: "Hi", Type: he.LogInfo},
 	} {
 		got, err := he.ParseServerMessage(line)
 		if err != nil || !reflect.DeepEqual(got, want) {
@@ -106,6 +110,16 @@ func TestServerMessages(t *testing.T) {
 	m := he.Metadata{Name: "P", Extra: map[string]string{"url": "/a", "name": "Q"}}
 	if got := m.Line(); got != `metadata {"name":"P","url":"/a"}`+"\n" {
 		t.Errorf("got %q", got)
+	}
+	log := he.NewLog("Saved").WithDetail("3 files").WithType(he.LogSuccess)
+	if got := log.Line(); got != `log {"summary":"Saved","detail":"3 files","type":"success"}`+"\n" {
+		t.Errorf("got %q", got)
+	}
+	if got := (he.Log{Summary: "Hi"}).Line(); got != `log {"summary":"Hi","type":"info"}`+"\n" {
+		t.Errorf("got %q", got)
+	}
+	if _, err := he.ParseServerMessage(`log {"detail":"no summary"}`); err == nil {
+		t.Error("log without summary parsed")
 	}
 	if _, err := he.ParseServerMessage(`element {"id":"x","type":"text"} x`); err == nil {
 		t.Error("trailing data parsed")

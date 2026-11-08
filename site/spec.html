@@ -71,8 +71,8 @@
         <dl>
           <dt>Server</dt>
           <dd>
-            The process that produces element, remove and signal messages and receives actions. It
-            owns application state.
+            The process that produces element, remove, signal, metadata and log messages and
+            receives actions. It owns application state.
           </dd>
           <dt>Renderer</dt>
           <dd>
@@ -224,6 +224,39 @@ element {"id":"title","type":"text","parent":"main","variant":"h1","text":"Inbox
           ignore:
         </p>
         <pre>metadata {"name":"Plants","url":"/plants/3"}</pre>
+
+        <h3 id="msg-log"><span class="num">5.5</span><code>log</code></h3>
+        <p>
+          <strong>Optional.</strong> A server MAY send it at any time, and MAY never send it. A
+          session needs no log messages to work, and a renderer MAY ignore them entirely. It
+          carries an event for the user or the host's developer log: something that happened,
+          rather than a change to the interface.
+        </p>
+        <dl>
+          <dt><code>summary</code></dt>
+          <dd>A non-empty string: a short summary of the event.</dd>
+          <dt><code>detail</code></dt>
+          <dd>
+            An optional string: details of the event, such as an error message or the items it
+            affected. A member that is not a string is ignored.
+          </dd>
+          <dt><code>type</code></dt>
+          <dd>
+            One of <code>warning</code>, <code>error</code>, <code>success</code>,
+            <code>info</code> or <code>debug</code>. Optional; the default is <code>info</code>.
+            Any other value is treated as <code>info</code>.
+          </dd>
+        </dl>
+        <p>
+          A message without a non-empty string <code>summary</code> is invalid. Other members are
+          ignored. A log message never changes the element tree or the signals. A renderer that
+          has somewhere to show logs SHOULD present each one (a status area, a console, a system
+          notification) according to its type, and SHOULD NOT interrupt the user with a modal. A
+          log is transient: it is not part of the session state, it is not replayed on a new
+          session, and a renderer need not keep it. For an error the user must see and act on, use
+          ordinary elements, such as a <code>notice</code>.
+        </p>
+        <pre>log {"summary":"Saved","detail":"3 files updated","type":"success"}</pre>
 
         <h2 id="client-messages"><span class="num">6</span>Renderer messages</h2>
 
@@ -623,8 +656,8 @@ element {"id":"title","type":"text","parent":"main","variant":"h1","text":"Inbox
         <ol>
           <li>
             A renderer MUST NOT terminate the session because of an invalid message. It ignores the
-            message and, if it has a diagnostic channel (a log, a developer console), reports it
-            there.
+            message and, if it has a diagnostic channel (a developer console, a diagnostics
+            pane), reports it there.
           </li>
           <li>
             A line that does not match the grammar, or whose JSON is not an object, is ignored.
@@ -645,7 +678,9 @@ element {"id":"title","type":"text","parent":"main","variant":"h1","text":"Inbox
         </ol>
         <p>
           There is no error message from server to renderer or from renderer to server. Application
-          errors are shown to the user with ordinary elements, such as a <code>notice</code>.
+          errors are shown to the user with ordinary elements, such as a <code>notice</code>. A
+          <code>log</code> message (section 5.5) reports an event to the host or user without
+          changing the interface; it is not a substitute for an error the user must act on.
         </p>
 
         <h2 id="security"><span class="num">13</span>Security considerations</h2>
@@ -730,6 +765,11 @@ json    = &lt;a JSON object per RFC 8259, containing no LF&gt;</pre>
               <td><code>metadata</code></td>
               <td>server → renderer</td>
               <td><a href="#msg-metadata">5.4</a></td>
+            </tr>
+            <tr>
+              <td><code>log</code></td>
+              <td>server → renderer</td>
+              <td><a href="#msg-log">5.5</a></td>
             </tr>
             <tr>
               <td><code>hello</code></td>

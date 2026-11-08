@@ -56,6 +56,16 @@ test('server messages', () => {
   assert.deepEqual(parseServerMessage('remove {"id":"x"}'), { tag: 'remove', id: 'x' });
   assert.deepEqual(parseServerMessage('metadata {"name":"Plants","x":1}'), { tag: 'metadata', metadata: { name: 'Plants' } });
   assert.deepEqual(parseServerMessage('metadata {"url":"/a","n":1}'), { tag: 'metadata', metadata: { url: '/a' } });
+  const log = parseServerMessage('log {"summary":"Saved","detail":"3 files","type":"success"}');
+  assert.deepEqual(log, { tag: 'log', log: { summary: 'Saved', detail: '3 files', type: 'success' } });
+  assert.equal(
+    serverMessageLine(log),
+    'log {"summary":"Saved","detail":"3 files","type":"success"}\n',
+  );
+  assert.deepEqual(parseServerMessage('log {"summary":"Hi","type":"other"}'), {
+    tag: 'log', log: { summary: 'Hi', type: 'info' },
+  });
+  assert.throws(() => parseServerMessage('log {"detail":"no summary"}'), ParseError);
   assert.throws(() => parseServerMessage('element {"id":"x","type":"marquee"}'), ParseError);
 });
 

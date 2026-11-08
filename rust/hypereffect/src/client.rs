@@ -20,7 +20,7 @@
 
 use crate::component::{accepts, AttrType, Component};
 use crate::message::{
-    encode_line, is_cel, parse_line, LineBuffer, Metadata, RendererMessage, ServerMessage,
+    encode_line, is_cel, parse_line, LineBuffer, Log, Metadata, RendererMessage, ServerMessage,
 };
 use crate::signals::{get_path, merge_patch_tracked, parse_path, path_patch, strip_local_map};
 use cel::objects::{Key, Map as CelMap};
@@ -110,6 +110,7 @@ pub struct Client {
     changes: Changes,
     diagnostics: RefCell<Vec<String>>,
     opens: Vec<String>,
+    logs: Vec<Log>,
 }
 
 impl Default for Client {
@@ -140,6 +141,7 @@ impl Client {
             changes: Changes::default(),
             diagnostics: RefCell::new(Vec::new()),
             opens: Vec::new(),
+            logs: Vec::new(),
         }
     }
 
@@ -196,6 +198,10 @@ impl Client {
             }
             "signal" => self.patch(&Value::Object(body)),
             "metadata" => self.set_metadata(Metadata::from_map(&body)),
+            "log" => match Log::from_map(&body) {
+                Ok(log) => self.logs.push(log),
+                Err(e) => self.diag(format!("ignored log: {e}")),
+            },
             t => self.diag(format!("ignored message with unknown tag '{t}'")),
         }
     }
@@ -424,6 +430,12 @@ impl Client {
     /// `open`), oldest first. The host decides whether and how to open them.
     pub fn take_opens(&mut self) -> Vec<String> {
         std::mem::take(&mut self.opens)
+    }
+
+    /// Returns and clears the log messages received since the last call,
+    /// oldest first. The host decides whether and how to show them.
+    pub fn take_logs(&mut self) -> Vec<Log> {
+        std::mem::take(&mut self.logs)
     }
 
     // --- internals ---------------------------------------------------------

@@ -92,6 +92,10 @@ def run(path: Path) -> None:
                 got = c.take_opens()
                 if got != json.loads(args):
                     failures.append(f"{at}: opened {got}")
+            elif cmd == "logs":
+                got = [log.to_json() for log in c.take_logs()]
+                if not same(got, json.loads(args)):
+                    failures.append(f"{at}: logs are {json.dumps(got)}")
             elif cmd == "absent":
                 if c.contains(args):
                     failures.append(f"{at}: {args} exists")
@@ -103,6 +107,8 @@ def run(path: Path) -> None:
         failures.append(f"{name}: unexpected output at the end: {sent[0].strip()}")
     if opens := c.take_opens():
         failures.append(f"{name}: URLs opened but not checked: {opens}")
+    if logs := c.take_logs():
+        failures.append(f"{name}: logs received but not checked: {logs}")
     assert not failures, "\n".join(failures)
 
 

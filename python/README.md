@@ -81,8 +81,9 @@ def test_counter() -> None:
 ```
 
 `l.write(path, value)` writes a bound signal as a control does,
-`l.tick(now_ms)` runs the timer, `l.client.value(path)` reads a signal and
-`l.client.take_opens()` returns the URLs buttons asked to open.
+`l.tick(now_ms)` runs the timer, `l.client.value(path)` reads a signal,
+`l.client.take_opens()` returns the URLs buttons asked to open and
+`l.client.take_logs()` the log messages from the server.
 `examples/todos.py` is the task list demo; `tests/test_todos.py` tests it.
 
 cel-python lacks parts of the CEL environment the spec requires, so

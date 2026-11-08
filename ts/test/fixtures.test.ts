@@ -97,6 +97,11 @@ function run(file: string) {
           if (!same(got, JSON.parse(args))) failures.push(`${at}: opened ${JSON.stringify(got)}`);
           break;
         }
+        case 'logs': {
+          const got = c.takeLogs();
+          if (!same(got, JSON.parse(args))) failures.push(`${at}: logs are ${JSON.stringify(got)}`);
+          break;
+        }
         case 'absent':
           if (c.contains(args)) failures.push(`${at}: ${args} exists`);
           break;
@@ -109,6 +114,8 @@ function run(file: string) {
   if (sent.length) failures.push(`${file}: unexpected output at the end: ${sent[0]!.trim()}`);
   const opens = c.takeOpens();
   if (opens.length) failures.push(`${file}: URLs opened but not checked: ${JSON.stringify(opens)}`);
+  const logs = c.takeLogs();
+  if (logs.length) failures.push(`${file}: logs received but not checked: ${JSON.stringify(logs)}`);
   assert.deepEqual(failures, []);
 }
 

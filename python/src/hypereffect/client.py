@@ -29,7 +29,7 @@ from celpy import celtypes as t
 from . import _cel
 from ._cel import CelError, Program, from_json, to_json, type_name
 from .components import AttrType, Component, accepts
-from .message import Action, Hello, Json, LineBuffer, Metadata, ServerMessage, is_cel, parse_line
+from .message import Action, Hello, Json, LineBuffer, Log, Metadata, ServerMessage, is_cel, parse_line
 from .server import App, Server
 from .signals import get_path, has_path, merge_patch_tracked, parse_path, path_patch, strip_local
 
@@ -113,6 +113,7 @@ class Client:
         self._changes = Changes()
         self._diagnostics: list[str] = []
         self._opens: list[str] = []
+        self._logs: list[Log] = []
 
     # --- transport ---------------------------------------------------------
 
@@ -156,6 +157,11 @@ class Client:
             self._patch(body)
         elif tag == "metadata":
             self._set_metadata(Metadata.from_json(body))
+        elif tag == "log":
+            try:
+                self._logs.append(Log.from_json(body))
+            except ValueError as e:
+                self._diag(f"ignored log: {e}")
         else:
             self._diag(f"ignored message with unknown tag '{tag}'")
 
@@ -329,6 +335,12 @@ class Client:
         to open them."""
         o, self._opens = self._opens, []
         return o
+
+    def take_logs(self) -> list[Log]:
+        """Returns and clears the log messages received since the last call,
+        oldest first. The host decides whether and how to show them."""
+        logs, self._logs = self._logs, []
+        return logs
 
     # --- internals ---------------------------------------------------------
 

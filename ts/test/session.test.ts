@@ -9,13 +9,15 @@ function open() {
   const updates: Changes[] = [];
   const diags: string[] = [];
   const opened: string[] = [];
+  const logs: unknown[] = [];
   const s = new Session({
     send: (l) => sent.push(l),
     onUpdate: (u) => updates.push(u),
     onDiagnostic: (m) => diags.push(m),
     onOpen: (u) => opened.push(u),
+    onLog: (l) => logs.push(l),
   });
-  return { s, sent, updates, diags, opened };
+  return { s, sent, updates, diags, opened, logs };
 }
 
 test('batches the changes of one task into one update', async () => {
@@ -46,6 +48,17 @@ test('a signal patch updates only the elements that read it', async () => {
   await tick();
   assert.deepEqual([...updates.at(-1)!.updated], ['c']);
   assert.equal(s.attr('a', 'text'), '2');
+});
+
+test('reports log messages as they happen', () => {
+  const { s, logs } = open();
+  s.start();
+  s.receive('log {"summary":"Saved","type":"success"}\n');
+  s.receive('log {"summary":"Careful"}\n');
+  assert.deepEqual(logs, [
+    { summary: 'Saved', type: 'success' },
+    { summary: 'Careful', type: 'info' },
+  ]);
 });
 
 test('reports diagnostics as they happen', () => {

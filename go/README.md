@@ -85,8 +85,9 @@ func TestCounter(t *testing.T) {
 ```
 
 `l.Write(path, value)` writes a bound signal as a control does, `l.Tick(now)`
-runs the timer, `l.Client.Value(path)` reads a signal and
-`l.Client.TakeOpens()` returns the URLs buttons asked to open.
+runs the timer, `l.Client.Value(path)` reads a signal,
+`l.Client.TakeOpens()` returns the URLs buttons asked to open and
+`l.Client.TakeLogs()` the log messages from the server.
 `examples/todos` is the task list demo with its test.
 
 Differences from the Rust crate:
