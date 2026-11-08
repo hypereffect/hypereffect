@@ -23,8 +23,8 @@ pub mod vtree;
 
 pub use component::Component;
 pub use message::{
-    cel, is_cel, ui, Action, Element, Handler, LineBuffer, Metadata, ParseError, RendererMessage,
-    ServerMessage,
+    cel, is_cel, ui, Action, Element, Handler, LineBuffer, Log, LogType, Metadata, ParseError,
+    RendererMessage, ServerMessage,
 };
 pub use serde_json::{self, json, Map, Value};
 pub use server::{App, Outbox, Server};

@@ -83,6 +83,7 @@ let el = c.get("value").unwrap();        // attrs resolved to plain JSON
 let action = c.trigger("inc", "onPress"); // Some(line) to send
 let changes = c.take_changes();          // what to redraw
 let urls = c.take_opens();               // URLs buttons asked to open
+let logs = c.take_logs();                // log messages from the server
 ```
 
 The host decides which of those URLs to open, and how (see the security

@@ -16,8 +16,9 @@ import {
   type AttrType, type Component, accepts, attrOf, attrs, defaultValue, isComponent, isStructural,
 } from './components.ts';
 import {
-  type Json, type JsonObject, type Metadata, type ServerMessage, Action, encodeLine, isCel,
-  LineBuffer, metadataFromObject, parseLine, rendererMessageLine, serverMessageLine,
+  type Json, type JsonObject, type Log, type Metadata, type ServerMessage, Action, encodeLine,
+  isCel, LineBuffer, logFromObject, metadataFromObject, parseLine, rendererMessageLine,
+  serverMessageLine,
 } from './message.ts';
 import { type App, Server } from './server.ts';
 import { getPath, isObject, mergePatchTracked, overlaps, parsePath, pathPatch, stripLocal } from './signals.ts';
@@ -91,6 +92,7 @@ export class Client {
   private changes = noChanges();
   private diagnostics: string[] = [];
   private opens: string[] = [];
+  private logs: Log[] = [];
 
   // --- transport ---------------------------------------------------------
 
@@ -132,6 +134,13 @@ export class Client {
       case 'remove': if (typeof body.id === 'string') this.remove(body.id); break;
       case 'signal': this.patch(body); break;
       case 'metadata': this.setMetadata(metadataFromObject(body)); break;
+      case 'log':
+        try {
+          this.logs.push(logFromObject(body));
+        } catch (e) {
+          this.diag(`ignored log: ${(e as Error).message}`);
+        }
+        break;
       default: this.diag(`ignored message with unknown tag '${tag}'`);
     }
   }
@@ -303,6 +312,12 @@ export class Client {
   // `open`), oldest first. The host decides whether and how to open them.
   takeOpens(): string[] {
     return this.opens.splice(0);
+  }
+
+  // Returns and clears the log messages received since the last call, oldest
+  // first. The host decides whether and how to show them.
+  takeLogs(): Log[] {
+    return this.logs.splice(0);
   }
 
   // --- internals ---------------------------------------------------------

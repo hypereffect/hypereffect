@@ -82,6 +82,7 @@ const session = new Session({
   send: (line) => ws.send(line),
   onUpdate: (u) => redraw(u), // {reset, created, updated, removed, reordered, connection, metadata}
   onOpen: (url) => maybeOpen(url),
+  onLog: (log) => showLog(log), // {summary, detail?, type}
 });
 ws.onopen = () => session.start(); // sends hello
 ws.onmessage = (e) => session.receive(e.data + '\n');
@@ -113,8 +114,8 @@ security considerations in the spec).
 
 `Client` is the same core without callbacks or timers, for hosts that poll:
 `hello()` and `trigger()` return the lines to send, and `takeChanges()`,
-`takeDiagnostics()` and `takeOpens()` return what happened since the last
-call.
+`takeDiagnostics()`, `takeOpens()` and `takeLogs()` return what happened since
+the last call.
 
 CEL runs on [cel-js](https://github.com/marcbachmann/cel-js), with what cel-js
 lacks from the functions the spec requires: `charAt`, `replace`, `reverse`,

@@ -275,7 +275,7 @@ func (h Handler) WithIndicator(path string) Handler {
 }
 
 // A ServerMessage is a message from the server to the renderer: an
-// *Element, a Remove, a Signal or a Metadata.
+// *Element, a Remove, a Signal, a Metadata or a Log.
 type ServerMessage interface {
 	Tag() string
 	// Line returns the message as a line, including the final line feed.
@@ -297,6 +297,9 @@ func (Signal) serverMessage()   {}
 func (m Metadata) Line() string { return encodeLine("metadata", m) }
 func (Metadata) Tag() string    { return "metadata" }
 func (Metadata) serverMessage() {}
+func (m Log) Line() string      { return encodeLine("log", m) }
+func (Log) Tag() string         { return "log" }
+func (Log) serverMessage()      {}
 
 // Signal is a merge patch for the signals.
 type Signal map[string]any
@@ -360,6 +363,75 @@ func MetadataFromMap(body map[string]any) Metadata {
 	return m
 }
 
+// LogType is the severity of a log message.
+type LogType string
+
+const (
+	LogWarning LogType = "warning"
+	LogError   LogType = "error"
+	LogSuccess LogType = "success"
+	LogInfo    LogType = "info"
+	LogDebug   LogType = "debug"
+)
+
+// Log is an event for the user or the host's developer log. It is not part of
+// the element tree or the signals.
+type Log struct {
+	// Summary is a short summary of the event.
+	Summary string `json:"summary"`
+	// Detail holds details of the event.
+	Detail string `json:"detail,omitempty"`
+	// Type is the severity of the event. The zero value means LogInfo.
+	Type LogType `json:"type"`
+}
+
+// NewLog returns an info log with this summary.
+func NewLog(summary string) Log {
+	return Log{Summary: summary, Type: LogInfo}
+}
+
+// WithDetail adds details to the event.
+func (l Log) WithDetail(detail string) Log {
+	l.Detail = detail
+	return l
+}
+
+// WithType sets the severity of the event.
+func (l Log) WithType(t LogType) Log {
+	l.Type = t
+	return l
+}
+
+// MarshalJSON writes an empty Type as "info".
+func (l Log) MarshalJSON() ([]byte, error) {
+	if l.Type == "" {
+		l.Type = LogInfo
+	}
+	type plain Log
+	return jsonx.Marshal(plain(l))
+}
+
+// LogFromMap reads a log message. Summary must be a non-empty string; a
+// missing or unknown type is LogInfo, and a Detail that is not a string is
+// ignored.
+func LogFromMap(body map[string]any) (Log, error) {
+	summary, _ := body["summary"].(string)
+	if summary == "" {
+		return Log{}, &ParseError{Kind: ErrInvalid, Detail: "log needs a non-empty string summary"}
+	}
+	l := NewLog(summary)
+	if detail, ok := body["detail"].(string); ok {
+		l.Detail = detail
+	}
+	if s, ok := body["type"].(string); ok {
+		switch LogType(s) {
+		case LogWarning, LogError, LogSuccess, LogInfo, LogDebug:
+			l.Type = LogType(s)
+		}
+	}
+	return l, nil
+}
+
 // ParseServerMessage parses a line (without its line feed).
 func ParseServerMessage(line string) (ServerMessage, error) {
 	// Fast path for elements, which also keeps the order of attributes.
@@ -397,6 +469,8 @@ func ServerMessageFromParts(tag string, body map[string]any) (ServerMessage, err
 		return Signal(body), nil
 	case "metadata":
 		return MetadataFromMap(body), nil
+	case "log":
+		return LogFromMap(body)
 	}
 	return nil, &ParseError{Kind: ErrUnknownTag, Detail: tag}
 }

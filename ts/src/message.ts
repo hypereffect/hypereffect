@@ -219,13 +219,43 @@ export function metadataFromObject(body: JsonObject): Metadata {
   return m;
 }
 
+// The severity of a log message.
+export type LogType = 'warning' | 'error' | 'success' | 'info' | 'debug';
+
+export const LOG_TYPES: readonly LogType[] = ['warning', 'error', 'success', 'info', 'debug'];
+
+// An event for the user or the host's developer log. It is not part of the
+// element tree or the signals.
+export interface Log {
+  summary: string;
+  detail?: string;
+  type: LogType;
+}
+
+// Reads a log message. `summary` must be a non-empty string; a missing or
+// unknown `type` is info, and a `detail` that is not a string is ignored.
+// Throws ParseError.
+export function logFromObject(body: JsonObject): Log {
+  const summary = body.summary;
+  if (typeof summary !== 'string' || summary === '') {
+    throw new ParseError('invalid', 'log needs a non-empty string summary');
+  }
+  const log = { summary } as Log;
+  if (typeof body.detail === 'string') log.detail = body.detail;
+  log.type = typeof body.type === 'string' && (LOG_TYPES as readonly string[]).includes(body.type)
+    ? body.type as LogType
+    : 'info';
+  return log;
+}
+
 // A message from the server to the renderer.
 export type ServerMessage =
   | { tag: 'element'; element: Element }
   | { tag: 'remove'; id: string }
   // A merge patch for the signals.
   | { tag: 'signal'; patch: JsonObject }
-  | { tag: 'metadata'; metadata: Metadata };
+  | { tag: 'metadata'; metadata: Metadata }
+  | { tag: 'log'; log: Log };
 
 // The message as a line, including the final line feed.
 export function serverMessageLine(m: ServerMessage): string {
@@ -234,6 +264,7 @@ export function serverMessageLine(m: ServerMessage): string {
     case 'remove': return encodeLine('remove', { id: m.id });
     case 'signal': return encodeLine('signal', m.patch);
     case 'metadata': return encodeLine('metadata', m.metadata);
+    case 'log': return encodeLine('log', m.log);
   }
 }
 
@@ -251,6 +282,7 @@ export function serverMessageFromParts(tag: string, body: JsonObject): ServerMes
       return { tag, id: body.id };
     case 'signal': return { tag, patch: body };
     case 'metadata': return { tag, metadata: metadataFromObject(body) };
+    case 'log': return { tag, log: logFromObject(body) };
   }
   throw new ParseError('unknown-tag', tag);
 }

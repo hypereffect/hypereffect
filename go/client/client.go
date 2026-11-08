@@ -106,6 +106,7 @@ type Client struct {
 	changes      Changes
 	diagnostics  []string
 	opens        []string
+	logs         []he.Log
 }
 
 // New returns a client with no session.
@@ -179,6 +180,13 @@ func (c *Client) ReceiveMessage(tag string, body map[string]any) {
 		c.patch(body)
 	case "metadata":
 		c.setMetadata(he.MetadataFromMap(body))
+	case "log":
+		l, err := he.LogFromMap(body)
+		if err != nil {
+			c.diag("ignored log: %v", err)
+		} else {
+			c.logs = append(c.logs, l)
+		}
 	default:
 		c.diag("ignored message with unknown tag '%s'", tag)
 	}
@@ -433,6 +441,14 @@ func (c *Client) TakeOpens() []string {
 	o := c.opens
 	c.opens = nil
 	return o
+}
+
+// TakeLogs returns and clears the log messages received since the last call,
+// oldest first. The host decides whether and how to show them.
+func (c *Client) TakeLogs() []he.Log {
+	l := c.logs
+	c.logs = nil
+	return l
 }
 
 // --- internals ---------------------------------------------------------

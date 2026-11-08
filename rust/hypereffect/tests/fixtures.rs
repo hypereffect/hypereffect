@@ -114,6 +114,12 @@ fn run(path: &Path) {
                         failures.push(format!("{at}: opened {got:?}"));
                     }
                 }
+                "logs" => {
+                    let got = serde_json::to_value(c.take_logs()).unwrap();
+                    if !same(&got, &json(args)) {
+                        failures.push(format!("{at}: logs are {got}"));
+                    }
+                }
                 "absent" => {
                     if c.contains(args) {
                         failures.push(format!("{at}: {args} exists"));
@@ -134,6 +140,10 @@ fn run(path: &Path) {
     let opens = c.take_opens();
     if !opens.is_empty() {
         failures.push(format!("{name}: URLs opened but not checked: {opens:?}"));
+    }
+    let logs = c.take_logs();
+    if !logs.is_empty() {
+        failures.push(format!("{name}: logs received but not checked: {logs:?}"));
     }
     c.take_diagnostics();
     assert!(failures.is_empty(), "{}", failures.join("\n"));

@@ -42,6 +42,12 @@ func (o *Outbox) Metadata(m Metadata) {
 	o.Send(m)
 }
 
+// Log sends an event for the user or the host's log. It never changes the
+// element tree or the signals.
+func (o *Outbox) Log(l Log) {
+	o.Send(l)
+}
+
 func (o *Outbox) IsEmpty() bool {
 	return o.out.Len() == 0
 }

@@ -254,6 +254,8 @@ pub enum ServerMessage {
     Signal(Map<String, Value>),
     /// Optional details about the application.
     Metadata(Metadata),
+    /// An event for the user or the host's log.
+    Log(Log),
 }
 
 /// Optional details about the application, sent by the server. A renderer is
@@ -333,6 +335,107 @@ impl From<Map<String, Value>> for Metadata {
     }
 }
 
+/// The severity of a log message.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum LogType {
+    Warning,
+    Error,
+    Success,
+    #[default]
+    Info,
+    Debug,
+}
+
+impl LogType {
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "warning" => Some(Self::Warning),
+            "error" => Some(Self::Error),
+            "success" => Some(Self::Success),
+            "info" => Some(Self::Info),
+            "debug" => Some(Self::Debug),
+            _ => None,
+        }
+    }
+}
+
+/// An event for the user or the host's developer log. It is not part of the
+/// element tree or the signals.
+///
+/// ```
+/// use hypereffect::{Log, LogType};
+///
+/// let log = Log::new("Saved").detail("3 files updated").kind(LogType::Success);
+/// assert_eq!(
+///     log.to_line(),
+///     "log {\"summary\":\"Saved\",\"detail\":\"3 files updated\",\"type\":\"success\"}\n"
+/// );
+/// ```
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Log {
+    /// A short summary of the event.
+    pub summary: String,
+    /// Details of the event.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+    /// The severity of the event.
+    #[serde(rename = "type", default)]
+    pub kind: LogType,
+}
+
+impl Log {
+    pub fn new(summary: impl Into<String>) -> Self {
+        Log {
+            summary: summary.into(),
+            detail: None,
+            kind: LogType::Info,
+        }
+    }
+
+    pub fn detail(mut self, detail: impl Into<String>) -> Self {
+        self.detail = Some(detail.into());
+        self
+    }
+
+    pub fn kind(mut self, kind: LogType) -> Self {
+        self.kind = kind;
+        self
+    }
+
+    /// Reads a log message. `summary` must be a non-empty string; a missing or
+    /// unknown `type` is info, and a `detail` that is not a string is ignored.
+    pub fn from_map(body: &Map<String, Value>) -> Result<Self, ParseError> {
+        let summary = body
+            .get("summary")
+            .and_then(Value::as_str)
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| ParseError::Invalid("log needs a non-empty string summary".into()))?;
+        Ok(Log {
+            summary: summary.to_string(),
+            detail: body
+                .get("detail")
+                .and_then(Value::as_str)
+                .map(str::to_string),
+            kind: body
+                .get("type")
+                .and_then(Value::as_str)
+                .and_then(LogType::from_name)
+                .unwrap_or_default(),
+        })
+    }
+
+    pub fn to_line(&self) -> String {
+        encode_line("log", self)
+    }
+}
+
+impl From<Log> for ServerMessage {
+    fn from(log: Log) -> Self {
+        ServerMessage::Log(log)
+    }
+}
+
 impl ServerMessage {
     pub fn remove(id: impl Into<String>) -> Self {
         ServerMessage::Remove { id: id.into() }
@@ -352,6 +455,7 @@ impl ServerMessage {
             ServerMessage::Remove { .. } => "remove",
             ServerMessage::Signal(_) => "signal",
             ServerMessage::Metadata(_) => "metadata",
+            ServerMessage::Log(_) => "log",
         }
     }
 
@@ -361,6 +465,7 @@ impl ServerMessage {
             ServerMessage::Remove { id } => serde_json::json!({ "id": id }),
             ServerMessage::Signal(m) => Value::Object(m.clone()),
             ServerMessage::Metadata(m) => serde_json::to_value(m).expect("metadata serializes"),
+            ServerMessage::Log(l) => serde_json::to_value(l).expect("log serializes"),
         }
     }
 
@@ -384,6 +489,8 @@ impl ServerMessage {
             serde_json::from_str(json).map(ServerMessage::Signal).ok()
         } else if let Some(json) = fast.strip_prefix("metadata ") {
             serde_json::from_str(json).map(ServerMessage::Metadata).ok()
+        } else if let Some(json) = fast.strip_prefix("log ") {
+            serde_json::from_str(json).map(ServerMessage::Log).ok()
         } else if let Some(json) = fast.strip_prefix("remove ") {
             #[derive(Deserialize)]
             struct Remove {
@@ -413,6 +520,7 @@ impl ServerMessage {
             },
             "signal" => Ok(ServerMessage::Signal(body)),
             "metadata" => Ok(ServerMessage::Metadata(Metadata::from_map(&body))),
+            "log" => Log::from_map(&body).map(ServerMessage::Log),
             t => Err(ParseError::UnknownTag(t.to_string())),
         }
     }
@@ -652,6 +760,27 @@ mod tests {
         assert_eq!(b.push(b"nal {}\n"), vec!["signal {}"]);
         assert!(parse_line("Signal {}").is_err());
         assert_eq!(parse_line("signal []"), Err(ParseError::NotAnObject));
+    }
+
+    #[test]
+    fn logs() {
+        let log = Log::new("Saved")
+            .detail("3 files updated")
+            .kind(LogType::Success);
+        let line = log.to_line();
+        assert_eq!(
+            line,
+            "log {\"summary\":\"Saved\",\"detail\":\"3 files updated\",\"type\":\"success\"}\n"
+        );
+        assert_eq!(
+            ServerMessage::parse(line.trim_end()).unwrap(),
+            ServerMessage::Log(log)
+        );
+        assert_eq!(
+            ServerMessage::parse(r#"log {"summary":"Hi","type":"other"}"#).unwrap(),
+            ServerMessage::Log(Log::new("Hi"))
+        );
+        assert!(ServerMessage::parse(r#"log {"detail":"no summary"}"#).is_err());
     }
 
     #[test]

@@ -5,7 +5,7 @@
 // received or triggered in one task) calls onUpdate once with what changed.
 
 import { type Changes, Client, type Resolved, type ResolvedTree } from './client.ts';
-import type { Json, JsonObject, Metadata } from './message.ts';
+import type { Json, JsonObject, Log, Metadata } from './message.ts';
 
 export interface SessionOptions {
   // Writes a line, with its line feed, to the transport.
@@ -17,6 +17,9 @@ export interface SessionOptions {
   // Asked to open a URL by a handler's `open`; the host decides whether and
   // how.
   onOpen?: (url: string) => void;
+  // Receives each log message from the server, oldest first. The host decides
+  // whether and how to show it.
+  onLog?: (log: Log) => void;
 }
 
 export class Session {
@@ -25,15 +28,18 @@ export class Session {
   private onUpdate: (changes: Changes) => void;
   private onDiagnostic: (msg: string) => void;
   private onOpen: (url: string) => void;
+  private onLog: (log: Log) => void;
   private scheduled = false;
 
   constructor({
     send, onUpdate = () => {}, onDiagnostic = (m) => console.warn('hypereffect:', m), onOpen = () => {},
+    onLog = () => {},
   }: SessionOptions) {
     this.send = send;
     this.onUpdate = onUpdate;
     this.onDiagnostic = onDiagnostic;
     this.onOpen = onOpen;
+    this.onLog = onLog;
   }
 
   // --- transport ---------------------------------------------------------
@@ -142,6 +148,7 @@ export class Session {
   // Reports diagnostics right away, so that they can be attributed to the
   // input that caused them, and schedules a flush of the changes.
   private after(): void {
+    for (const l of this.client.takeLogs()) this.onLog(l);
     for (const d of this.client.takeDiagnostics()) this.onDiagnostic(d);
     if (this.scheduled) return;
     this.scheduled = true;

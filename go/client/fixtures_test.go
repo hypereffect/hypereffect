@@ -174,6 +174,10 @@ func run(t *testing.T, path string) {
 				if got := c.TakeOpens(); !slices.Equal(got, want) {
 					fail(at, "opened %q", got)
 				}
+			case "logs":
+				if got := normal(c.TakeLogs()); !same(got, decode(t, args)) {
+					fail(at, "logs are %s", jsonx.MustMarshal(got))
+				}
 			case "absent":
 				if c.Contains(args) {
 					fail(at, "%s exists", args)
@@ -190,6 +194,9 @@ func run(t *testing.T, path string) {
 	}
 	if opens := c.TakeOpens(); len(opens) > 0 {
 		t.Errorf("%s: URLs opened but not checked: %q", name, opens)
+	}
+	if logs := c.TakeLogs(); len(logs) > 0 {
+		t.Errorf("%s: logs received but not checked: %v", name, logs)
 	}
 }
 

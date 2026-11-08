@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Generic, TypeVar
 
-from .message import Action, Element, Hello, Json, LineBuffer, Metadata, ParseError, Remove, \
+from .message import Action, Element, Hello, Json, LineBuffer, Log, Metadata, ParseError, Remove, \
     ServerMessage, Signal, encode_line, parse_renderer_message
 
 
@@ -35,6 +35,11 @@ class Outbox:
         """Sends optional details about the application, replacing any sent
         before."""
         self.send(m)
+
+    def log(self, log: Log) -> None:
+        """Sends an event for the user or the host's log. It never changes the
+        element tree or the signals."""
+        self.send(log)
 
     def is_empty(self) -> bool:
         return not self._out

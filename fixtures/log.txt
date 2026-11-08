@@ -1,0 +1,10 @@
+# log messages are events for the host, not part of the tree or signals.
+log {"summary":"Starting","type":"info"}
+log {"summary":"Saved","detail":"3 files updated","type":"success"}
+log {"summary":"Disk almost full","type":"warning"}
+log {"summary":"Upload failed","detail":"connection reset","type":"error"}
+log {"summary":"cache hit","type":"debug"}
+log {"summary":"Unknown type defaults to info","type":"other"}
+=logs [{"summary":"Starting","type":"info"},{"summary":"Saved","detail":"3 files updated","type":"success"},{"summary":"Disk almost full","type":"warning"},{"summary":"Upload failed","detail":"connection reset","type":"error"},{"summary":"cache hit","type":"debug"},{"summary":"Unknown type defaults to info","type":"info"}]
+=signals {}
+=children - []

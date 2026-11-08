@@ -21,6 +21,8 @@ from .message import (
     Hello,
     Json,
     LineBuffer,
+    Log,
+    LogType,
     Metadata,
     ParseError,
     ParseErrorKind,
@@ -39,7 +41,8 @@ from .server import App, Outbox, Server
 
 __all__ = [
     "Action", "App", "Attr", "AttrType", "Component", "Element", "Handler", "Hello", "Json",
-    "LineBuffer", "Metadata", "Outbox", "ParseError", "ParseErrorKind", "RendererMessage",
+    "LineBuffer", "Log", "LogType", "Metadata", "Outbox", "ParseError", "ParseErrorKind",
+    "RendererMessage",
     "Remove", "Server", "ServerMessage", "Signal", "accepts", "cel", "encode_line", "is_cel",
     "parse_line", "parse_renderer_message", "parse_server_message", "signals", "ui",
 ]

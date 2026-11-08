@@ -6,7 +6,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Self, TypeAlias
+from typing import Any, Literal, Self, TypeAlias
 
 from .components import Component
 from .signals import get_path, parse_path
@@ -218,7 +218,49 @@ class Metadata:
         return cls(get("name"), get("description"), get("icon"), extra)
 
 
-ServerMessage: TypeAlias = "Element | Remove | Signal | Metadata"
+LogType: TypeAlias = Literal["warning", "error", "success", "info", "debug"]
+
+LOG_TYPES = frozenset(("warning", "error", "success", "info", "debug"))
+
+
+@dataclass(frozen=True)
+class Log:
+    """An event for the user or the host's developer log. It is not part of
+    the element tree or the signals."""
+
+    summary: str
+    detail: str | None = None
+    type: LogType = "info"
+    tag = "log"
+
+    def to_json(self) -> dict[str, Json]:
+        o: dict[str, Json] = {"summary": self.summary}
+        if self.detail is not None:
+            o["detail"] = self.detail
+        o["type"] = self.type
+        return o
+
+    def to_line(self) -> str:
+        return encode_line("log", self.to_json())
+
+    @classmethod
+    def from_json(cls, body: dict[str, Json]) -> Log:
+        """Reads a log message. ``summary`` must be a non-empty string; a
+        missing or unknown ``type`` is info, and a ``detail`` that is not a
+        string is ignored. Raises ParseError."""
+        summary = body.get("summary")
+        if not isinstance(summary, str) or not summary:
+            raise ParseError(ParseErrorKind.INVALID, "log needs a non-empty string summary")
+        detail = body.get("detail")
+        typ = body.get("type")
+        return cls(
+            summary,
+            detail if isinstance(detail, str) else None,
+            typ if isinstance(typ, str) and typ in LOG_TYPES else "info",  # type: ignore[arg-type]
+        )
+
+
+ServerMessage: TypeAlias = "Element | Remove | Signal | Metadata | Log"
 
 
 def parse_server_message(line: str) -> ServerMessage:
@@ -239,6 +281,8 @@ def server_message_from_parts(tag: str, body: dict[str, Json]) -> ServerMessage:
         return Signal(body)
     if tag == "metadata":
         return Metadata.from_json(body)
+    if tag == "log":
+        return Log.from_json(body)
     raise ParseError(ParseErrorKind.UNKNOWN_TAG, tag)
 
 

@@ -2,8 +2,8 @@
 // logic, and a Server that drives an app over a stream.
 
 import {
-  type Element, type JsonObject, type Metadata, type ServerMessage, encodeLine, LineBuffer,
-  parseRendererMessage, serverMessageLine, type Action,
+  type Action, type Element, type JsonObject, type Log, type Metadata, type ServerMessage,
+  encodeLine, LineBuffer, parseRendererMessage, serverMessageLine,
 } from './message.ts';
 import { isObject } from './signals.ts';
 
@@ -32,6 +32,12 @@ export class Outbox {
   // Sends optional details about the application, replacing any sent before.
   metadata(m: Metadata): void {
     this.send({ tag: 'metadata', metadata: m });
+  }
+
+  // Sends an event for the user or the host's log. It never changes the
+  // element tree or the signals.
+  log(log: Log): void {
+    this.send({ tag: 'log', log });
   }
 
   isEmpty(): boolean {
